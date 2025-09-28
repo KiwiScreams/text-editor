@@ -1,138 +1,48 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ge">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Проверка правок — подсветка и счёт</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Проверка правок — подсветка с подсказкой</title>
 <style>
-:root{
-  --bg:#f5f7fa;
-  --card:#fff;
-  --accent:#2b7be9;
-  --good-bg:#c8f7c5;
-  --bad-bg:#f7c5c5;
-  --muted:#666;
-  --editor-font: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
-}
-body{
-  margin:0;
-  font-family:var(--editor-font);
-  background:var(--bg);
-  color:#222;
-  display:flex;
-  justify-content:center;
-  padding:36px 18px;
-}
-.wrap{
-  width:920px;
-  max-width:95%;
-  background:var(--card);
-  border-radius:12px;
-  padding:22px;
-  box-shadow:0 8px 30px rgba(20,30,60,0.08);
-}
-h1{ margin:0 0 6px 0; font-size:20px;}
-p.lead{ margin:6px 0 18px 0; color:var(--muted); }
-.meta {
-  display:flex;
-  gap:12px;
-  align-items:center;
-  margin-bottom:14px;
-}
-.chip{
-  background:#f0f6ff;
-  color: #0c4fb2;
-  padding:6px 10px;
-  border-radius:999px;
-  font-size:13px;
-}
-.score {
-  margin-left:auto;
-  font-weight:600;
-  color:#222;
-}
-.editor-stack{
-  width:100%;
-}
-textarea#input {
-  width:100%;
-  min-height:120px;
-  max-height:80vh;
-  resize:vertical;
-  padding:14px;
-  border-radius:10px;
-  border:1px solid #d0d7e0;
-  font-size:16px;
-  line-height:1.6;
-  font-family:inherit;
-  box-sizing:border-box;
-  background:transparent;
-  overflow:hidden;
-}
-.display-text {
-  width:100%;
-  padding:14px;
-  border-radius:10px;
-  border:1px solid #d0d7e0;
-  font-size:16px;
-  line-height:1.6;
-  font-family:inherit;
-  white-space:pre-wrap;
-  word-break:break-word;
-}
-.tok { padding:2px 4px; border-radius:5px; margin:0 1px; display:inline-block; }
-.tok.ok { background:var(--good-bg); }
-.tok.bad { background:var(--bad-bg); }
-.tok.changed { box-shadow:0 0 0 2px rgba(0,0,0,0.04) inset; position:relative; }
-.tok.changed::after{
-  content:"●";
-  font-size:8px;
-  position:absolute;
-  right:-6px;
-  top:-6px;
-  color:#333;
-  opacity:0.5;
-}
-.controls { display:flex; gap:12px; margin-top:14px; align-items:center; }
-button {
-  background:var(--accent);
-  color:#fff;
-  border:none;
-  padding:10px 14px;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:600;
-}
-button:disabled { opacity:0.5; cursor:not-allowed; }
-.info { color:var(--muted); font-size:14px; }
-.result { margin-top:14px; font-weight:600; }
-@media (max-width:560px){
-  .wrap{ padding:14px; }
-  textarea#input, .display-text { font-size:15px; }
-}
+body { font-family: Arial, sans-serif; background:#f5f7fa; padding:30px; }
+h1 { text-align:center; margin-bottom:15px;}
+textarea { width:100%; min-height:150px; font-size:16px; padding:10px; border-radius:6px; border:1px solid #ccc; margin-bottom:10px; resize:vertical; }
+button { padding:10px 20px; font-size:16px; border:none; border-radius:6px; background:#007bff; color:white; cursor:pointer; }
+button:disabled { background:#aaa; cursor:not-allowed; }
+.display-text { white-space:pre-wrap; line-height:1.5; font-size:16px; padding:10px; border-radius:6px; border:1px solid #ccc; background:#fff; }
+.tok { padding:2px 4px; border-radius:4px; margin:0 1px; display:inline-block; }
+.tok.correct { background:#c8f7c5; } /* исправлено правильно */
+.tok.wrong { background:#f7c5c5; }   /* исправлено неправильно */
+.tok.missed { background:#fff7c5; }  /* пропущено */
+.tok .hint { background:#fff7c5; color:#222; margin-left:4px; padding:1px 4px; border-radius:3px; font-size:14px; }
+.score { font-weight:bold; margin-top:10px; }
 </style>
 </head>
 <body>
-<div class="wrap" role="main">
-  <h1>Задание — исправь ошибки</h1>
-  <p class="lead">В тексте <strong>16 ошибок</strong> (запятая тоже считается). Исправь их — затем нажми <em>Проверить</em>. После проверки редактировать нельзя.</p>
-  <div class="meta">
-    <div class="chip">Всего ошибок: <strong id="totalErrors">—</strong></div>
-    <div class="chip">Начальный счёт: <strong>0</strong></div>
-    <div class="score">Текущий балл: <span id="score">0</span></div>
-  </div>
-  <div class="editor-stack">
-    <textarea id="input" aria-label="Текст для правки"></textarea>
-  </div>
-  <div class="controls">
-    <button id="checkBtn">Проверить</button>
-    <div class="info">Подсветка: <span style="background:#c8f7c5;padding:2px 6px;border-radius:4px;margin-left:6px">правильно</span> / <span style="background:#f7c5c5;padding:2px 6px;border-radius:4px;margin-left:6px">неправильно</span>. Маркер ● — изменённый токен.</div>
-  </div>
-  <div class="result" id="resultLine" role="status" aria-live="polite"></div>
-</div>
+<h1>Задание — исправь ошибки</h1>
+<textarea id="userInput"></textarea>
+<button id="checkBtn">Проверить</button>
+<div class="score" id="score">Очки: 0</div>
+<div class="display-text" id="result"></div>
+
 <script>
-const correctText = `ფეხბურთი სპორტის ყველაზე პოპულარული სახეობაა მსოფლიოში. ეს თამაში XIX
-საუკუნეში შეიქმნა ინგლისში. ინგლისელებმა შემოიტანეს ის საქართველოშიც. ფოთისა და
+// Тексты
+const wrongText = `ფეხბურთი სპორტის ყველაზე პოპულარული სახეობაა მსოფლიოში. ეს თამაში XIX საუკუნეში შეიქმნა ინგლისში.
+ინგლისელებმა შემოიტანეს ის საქართველოშიც. ფოთისა და ბათუმის მოსახლეობა ხშირად ხედავდნენ თუ როგორ
+თამაშობდნენ 'ფუტბოლს' ბრიტანულ გემების მეზღვაურები. სპორტის ეს სახეობა სულ მალე ქართველებმაც შეიყვარეს.
+ფეხბურთი ქართულ პრესაში პირველათ 1890 წელს არის ნახსენები.
+საქართველოს ზღვის პირა ქალაქების შემდეგ ფეხბურთი თბილისშიც შემოვიდა. ამავე პერიოდში ინგლისურიდან
+თამაშის წესები ითარგმნა. 1906 წელს ჩამოყალიბდა ფეხბურთის მოყვარულთა წრე რომელსაც ვარჯიშისათვის სათანადო
+გარემო ჭირდებოდა. გადაწყდა რომ საფეხბურთო მოედანისათვის შესაფერისი ადგილი დიდუბის იპოდრომზე გამოეყოთ.
+პირველი ოფიციალური შეხვედრა 1911 წელს გაიმართა. ერთი წლის შემდეგ ჩატარდა ქალაქის ჩემპიონატი რომელშიც
+გამარჯვება მოიხვეჭა ვაჟთა II გიმნაზიის გუნდმა. 1923 წელს ერთმანეთს უკვე 27 გუნდი ეჯიბრებოდა. 1925 წელს შეიქმნა
+საფეხბურთო გუნდი „დინამო“ რის სახელთანაც არის დაკავშირებული ქართული ფეხბურთის არაერთი მნიშვნელოვანი
+წარმატება.
+1990 წლის 15 თებერვალს დაარსდა საქართველოს ფეხბურთის ფედერაცია რომელმაც იმავე წელს უხელმძღვანელა
+საქართველოს პირველ დამოუკიდებელ ჩემპიონატსა და თასის გათამაშებას.`;
+
+const correctText = `ფეხბურთი სპორტის ყველაზე პოპულარული სახეობაა მსოფლიოში. ეს თამაში XIX საუკუნეში შეიქმნა ინგლისში. ინგლისელებმა შემოიტანეს ის საქართველოშიც. ფოთისა და
 ბათუმის მოსახლეობა ხშირად ხედავდა, თუ როგორ თამაშობდნენ 'ფუტბოლს' ბრიტანული
 გემების მეზღვაურები. სპორტის ეს სახეობა სულ მალე ქართველებმაც შეიყვარეს. ფეხბურთი
 ქართულ პრესაში პირველად 1890 წელს არის ნახსენები.
@@ -147,73 +57,90 @@ const correctText = `ფეხბურთი სპორტის ყველ
 1990 წლის 15 თებერვალს დაარსდა საქართველოს ფეხბურთის ფედერაცია, რომელმაც
 იმავე წელს უხელმძღვანელა საქართველოს პირველ დამოუკიდებელ ჩემპიონატსა და თასის
 გათამაშებას.`;
-const wrongText = `ფეხბურთი სპორტის ყველაზე პოპულარული სახეობაა მსოფლიოში. ეს თამაში XIX საუკუნეში შეიქმნა ინგლისში.
-ინგლისელებმა შემოიტანეს ის საქართველოშიც. ფოთისა და ბათუმის მოსახლეობა ხშირად ხედავდნენ თუ როგორ
-თამაშობდნენ 'ფუტბოლს' ბრიტანულ გემების მეზღვაურები. სპორტის ეს სახეობა სულ მალე ქართველებმაც შეიყვარეს.
-ფეხბურთი ქართულ პრესაში პირველათ 1890 წელს არის ნახსენები.
-საქართველოს ზღვის პირა ქალაქების შემდეგ ფეხბურთი თბილისშიც შემოვიდა. ამავე პერიოდში ინგლისურიდან
-თამაშის წესები ითარგმნა. 1906 წელს ჩამოყალიბდა ფეხბურთის მოყვარულთა წრე რომელსაც ვარჯიშისათვის სათანადო
-გარემო ჭირდებოდა. გადაწყდა რომ საფეხბურთო მოედანისათვის შესაფერისი ადგილი დიდუბის იპოდრომზე გამოეყოთ.
-პირველი ოფიციალური შეხვედრა 1911 წელს გაიმართა. ერთი წლის შემდეგ ჩატარდა ქალაქის ჩემპიონატი რომელშიც
-გამარჯვება მოიხვეჭა ვაჟთა II გიმნაზიის გუნდმა. 1923 წელს ერთმანეთს უკვე 27 გუნდი ეჯიბრებოდა. 1925 წელს შეიქმნა
-საფეხბურთო გუნდი „დინამო“ რის სახელთანაც არის დაკავშირებული ქართული ფეხბურთის არაერთი მნიშვნელოვანი
-წარმატება.
-1990 წლის 15 თებერვალს დაარსდა საქართველოს ფეხბურთის ფედერაცია რომელმაც იმავე წელს უხელმძღვანელა
-საქართველოს პირველ დამოუკიდებელ ჩემპიონატსა და თასის გათამაშებას.`;
-let score=0, checked=false;
-const tArea=document.getElementById("input");
-const checkBtn=document.getElementById("checkBtn");
-const totalErrorsEl=document.getElementById("totalErrors");
-const scoreEl=document.getElementById("score");
-const resultLine=document.getElementById("resultLine");
-tArea.value=wrongText;
-function resizeTextarea(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
-tArea.addEventListener('input',()=>resizeTextarea(tArea));
-resizeTextarea(tArea);
-const reCompare=/[\p{L}\p{N}\-]+|[^\s\p{L}\p{N}]/gu;
-const reDisplay=/[\p{L}\p{N}\-]+|[^\s\p{L}\p{N}]|\s+/gu;
-function escapeHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-function tokensForCompare(s){ const m=s.match(reCompare); return m?m:[]; }
-function tokensForDisplay(s){ const m=s.match(reDisplay); return m?m:[]; }
-function alignArrays(a,b){ const n=a.length,m=b.length,dp=Array.from({length:n+1},()=>new Array(m+1).fill(0)); for(let i=0;i<=n;i++) dp[i][0]=i; for(let j=0;j<=m;j++) dp[0][j]=j; for(let i=1;i<=n;i++){ for(let j=1;j<=m;j++){ const cost=(a[i-1]===b[j-1]?0:1); dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+cost);}} let i=n,j=m,A=[],B=[]; while(i>0||j>0){ if(i>0&&dp[i][j]===dp[i-1][j]+1){A.push(a[i-1]);B.push(null);i--;} else if(j>0&&dp[i][j]===dp[i][j-1]+1){A.push(null);B.push(b[j-1]);j--;} else {A.push(a[i-1]);B.push(b[j-1]);i--;j--;}} A.reverse();B.reverse();return {aAligned:A,bAligned:B};}
-(function(){ const corr=tokensForCompare(correctText); const wrong=tokensForCompare(wrongText); const {aAligned,bAligned}=alignArrays(corr,wrong); let mismatches=0; for(let k=0;k<aAligned.length;k++){ const ca=aAligned[k],wb=bAligned[k]; if(ca===null||wb===null)mismatches++; else if(ca!==wb)mismatches++; } totalErrorsEl.textContent=mismatches; })();
-checkBtn.addEventListener('click',()=>{
-  if(checked) return;
-  checked=true;
-  checkBtn.disabled=true;
-  tArea.readOnly=true;
-  const userRaw=tArea.value;
-  const corrTokens=tokensForCompare(correctText);
-  const wrongTokens=tokensForCompare(wrongText);
-  const userTokens=tokensForCompare(userRaw);
-  const alignOrig=alignArrays(corrTokens,wrongTokens);
-  const origCorrAlign=alignOrig.aAligned;
-  const origWrongAlign=alignOrig.bAligned;
-  const origWasWrong=[];
-  const origWrongByCorrectIndex=[];
-  let corrIdx=0;
-  for(let k=0;k<origCorrAlign.length;k++){ const c=origCorrAlign[k],w=origWrongAlign[k]; if(c!==null){ const wasWrong=!(w===c); origWasWrong[corrIdx]=wasWrong; origWrongByCorrectIndex[corrIdx]=w; corrIdx++;}}
-  const alignUser=alignArrays(corrTokens,userTokens);
-  const corrAlign=alignUser.aAligned;
-  const userAlign=alignUser.bAligned;
-  let delta=0;
-  const userStatuses=[];
-  let corrIndexCounter=0;
-  let userIndexCounter=0;
-  for(let k=0;k<corrAlign.length;k++){ const c=corrAlign[k],u=userAlign[k]; if(c!==null){ const origWas=!!origWasWrong[corrIndexCounter]; const origToken=origWrongByCorrectIndex[corrIndexCounter]??null; if(u===null){ if(!origWas) delta-=1; } else{ const userChanged=!(origToken===u); if(origWas&&u===c) delta+=1; else if(!origWas&&u!==c) delta-=1; userStatuses[userIndexCounter]={text:u,isCorrect:(u===c),changed:userChanged,originallyWrong:origWas}; userIndexCounter++;} corrIndexCounter++;} else{ if(u!==null){ delta-=1; userStatuses[userIndexCounter]={text:u,isCorrect:false,changed:true,originallyWrong:false}; userIndexCounter++;}}}
-  for(let idx=userIndexCounter;idx<userTokens.length;idx++){ delta-=1; userStatuses[idx]={text:userTokens[idx],isCorrect:false,changed:true,originallyWrong:false};}
-  score+=delta;
-  scoreEl.textContent=String(score);
-  const displayTokens=tokensForDisplay(userRaw);
-  let ui=0,html="";
-  for(const dt of displayTokens){ if(/\s+/.test(dt)){ html+=escapeHtml(dt);} else{ const st=userStatuses[ui]; const safe=escapeHtml(dt); if(!st){ html+=`<span class="tok bad">${safe}</span>`;} else{ const cls=st.isCorrect?'ok':'bad'; const changedClass=st.changed?' changed':''; html+=`<span class="tok ${cls}${changedClass}">${safe}</span>`;} ui++;}}
-  const displayDiv=document.createElement('div');
-  displayDiv.className='display-text';
-  displayDiv.innerHTML=html;
-  tArea.parentNode.replaceChild(displayDiv,tArea);
-  if(delta>0) resultLine.textContent=`✅ +${delta} — исправлено. Текущий счёт: ${score}`;
-  else if(delta<0) resultLine.textContent=`⚠️ ${delta} — ошибки. Текущий счёт: ${score}`;
-  else resultLine.textContent=`ℹ️ Изменений нет. Текущий счёт: ${score}`;
+
+// Элементы
+const tArea = document.getElementById("userInput");
+const checkBtn = document.getElementById("checkBtn");
+const resultDiv = document.getElementById("result");
+const scoreDiv = document.getElementById("score");
+
+tArea.value = wrongText;
+
+// Токенизация (слова и знаки препинания) с поддержкой грузинских букв
+function tokenize(text) {
+    return text.match(/[\p{Script=Georgian}\w]+|[^\s\p{Script=Georgian}\w]/gu) || [];
+}
+
+// Выравнивание токенов (редакционное расстояние)
+function align(correct, user) {
+    const n = correct.length, m = user.length;
+    const dp = Array.from({length:n+1},()=>Array(m+1).fill(0));
+    for(let i=0;i<=n;i++) dp[i][0]=i;
+    for(let j=0;j<=m;j++) dp[0][j]=j;
+    for(let i=1;i<=n;i++){
+        for(let j=1;j<=m;j++){
+            dp[i][j] = correct[i-1]===user[j-1]?dp[i-1][j-1]:Math.min(dp[i-1][j-1]+1, dp[i-1][j]+1, dp[i][j-1]+1);
+        }
+    }
+    let i=n,j=m;
+    const aligned = [];
+    while(i>0 || j>0){
+        if(i>0 && j>0 && dp[i][j]===dp[i-1][j-1]+ (correct[i-1]===user[j-1]?0:1)){
+            aligned.unshift([correct[i-1], user[j-1]]);
+            i--; j--;
+        } else if(i>0 && dp[i][j]===dp[i-1][j]+1){
+            aligned.unshift([correct[i-1], null]);
+            i--;
+        } else {
+            aligned.unshift([null, user[j-1]]);
+            j--;
+        }
+    }
+    return aligned;
+}
+
+// Проверка текста
+checkBtn.addEventListener("click",()=>{
+    const userTokens = tokenize(tArea.value);
+    const correctTokens = tokenize(correctText);
+    const wrongTokens = tokenize(wrongText);
+
+    const alignment = align(correctTokens, userTokens);
+
+    let resultHTML = "";
+    let score = 0;
+
+    for(const [corr, user] of alignment){
+        if(corr!==null && user===corr){
+            if(user!==wrongTokens[wrongTokens.indexOf(corr)]){
+                // исправлено правильно
+                resultHTML += `<span class="tok correct">${user}</span> `;
+                score++;
+            } else {
+                // не трогал правильный токен
+                resultHTML += `${user} `;
+            }
+        } else if(corr!==null && user!==corr){
+            if(user===null){
+                // пропущено исправление
+                resultHTML += `<span class="tok missed">${corr}</span> `;
+                score--;
+            } else {
+                // исправлено неверно, показываем подсказку
+                resultHTML += `<span class="tok wrong">${user}<span class="hint">${corr}</span></span> `;
+                score--;
+            }
+        } else if(corr===null && user!==null){
+            // лишний токен
+            resultHTML += `<span class="tok wrong">${user}</span> `;
+            score--;
+        }
+    }
+
+    resultDiv.innerHTML = resultHTML.trim();
+    scoreDiv.textContent = "Очки: "+score;
+    tArea.disabled = true;
+    checkBtn.disabled = true;
 });
 </script>
 </body>
