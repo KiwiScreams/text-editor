@@ -23,7 +23,7 @@ button:disabled { background:#aaa; cursor:not-allowed; }
 <h1>შეასწორე შეცდომები</h1>
 <textarea id="userInput"></textarea>
 <button id="checkBtn">შემოწმება</button>
-<div class="score" id="score">ქულა: 0</div>
+<div class="score" id="score">ქულა: 14</div>
 <div class="display-text" id="result"></div>
 
 <script>
@@ -103,27 +103,26 @@ checkBtn.addEventListener("click",()=>{
     const alignment = align(correctTokens, userTokens);
 
     let resultHTML = "";
-    let score = 0;
+    let score = 14; // начальные очки
 
     for(const [corr, user] of alignment){
         if(corr!==null && user===corr){
             if(user!==wrongTokens[wrongTokens.indexOf(corr)]){
                 resultHTML += `<span class="tok correct">${user}</span> `;
-                score++;
             } else {
                 resultHTML += `${user} `;
             }
         } else if(corr!==null && user!==corr){
             if(user===null){
                 resultHTML += `<span class="tok missed">${corr}</span> `;
-                score--;
+                score = Math.max(0, score - 1);
             } else {
                 resultHTML += `<span class="tok wrong">${user}<span class="hint">${corr}</span></span> `;
-                score--;
+                score = Math.max(0, score - 1);
             }
         } else if(corr===null && user!==null){
             resultHTML += `<span class="tok wrong">${user}</span> `;
-            score--;
+            score = Math.max(0, score - 1);
         }
     }
 
