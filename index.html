@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Проверка правок — подсветка с подсказкой</title>
+<title>რედაქტირება</title>
 <style>
 body { font-family: Arial, sans-serif; background:#f5f7fa; padding:30px; }
 h1 { text-align:center; margin-bottom:15px;}
@@ -20,14 +20,13 @@ button:disabled { background:#aaa; cursor:not-allowed; }
 </style>
 </head>
 <body>
-<h1>Задание — исправь ошибки</h1>
+<h1>შეასწორე შეცდომები</h1>
 <textarea id="userInput"></textarea>
-<button id="checkBtn">Проверить</button>
-<div class="score" id="score">Очки: 0</div>
+<button id="checkBtn">შემოწმება</button>
+<div class="score" id="score">ქულა: 0</div>
 <div class="display-text" id="result"></div>
 
 <script>
-// Тексты
 const wrongText = `ფეხბურთი სპორტის ყველაზე პოპულარული სახეობაა მსოფლიოში. ეს თამაში XIX საუკუნეში შეიქმნა ინგლისში.
 ინგლისელებმა შემოიტანეს ის საქართველოშიც. ფოთისა და ბათუმის მოსახლეობა ხშირად ხედავდნენ თუ როგორ
 თამაშობდნენ 'ფუტბოლს' ბრიტანულ გემების მეზღვაურები. სპორტის ეს სახეობა სულ მალე ქართველებმაც შეიყვარეს.
@@ -58,7 +57,6 @@ const correctText = `ფეხბურთი სპორტის ყველ
 იმავე წელს უხელმძღვანელა საქართველოს პირველ დამოუკიდებელ ჩემპიონატსა და თასის
 გათამაშებას.`;
 
-// Элементы
 const tArea = document.getElementById("userInput");
 const checkBtn = document.getElementById("checkBtn");
 const resultDiv = document.getElementById("result");
