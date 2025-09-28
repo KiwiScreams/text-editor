@@ -12,9 +12,9 @@ button { padding:10px 20px; font-size:16px; border:none; border-radius:6px; back
 button:disabled { background:#aaa; cursor:not-allowed; }
 .display-text { white-space:pre-wrap; line-height:1.5; font-size:16px; padding:10px; border-radius:6px; border:1px solid #ccc; background:#fff; }
 .tok { padding:2px 4px; border-radius:4px; margin:0 1px; display:inline-block; }
-.tok.correct { background:#c8f7c5; } /* исправлено правильно */
-.tok.wrong { background:#f7c5c5; }   /* исправлено неправильно */
-.tok.missed { background:#fff7c5; }  /* пропущено */
+.tok.correct { background:#c8f7c5; }
+.tok.wrong { background:#f7c5c5; }
+.tok.missed { background:#fff7c5; }
 .tok .hint { background:#fff7c5; color:#222; margin-left:4px; padding:1px 4px; border-radius:3px; font-size:14px; }
 .score { font-weight:bold; margin-top:10px; }
 </style>
@@ -64,12 +64,10 @@ const scoreDiv = document.getElementById("score");
 
 tArea.value = wrongText;
 
-// Токенизация (слова и знаки препинания) с поддержкой грузинских букв
 function tokenize(text) {
-    return text.match(/[\p{Script=Georgian}\w]+|[^\s\p{Script=Georgian}\w]/gu) || [];
+    return text.match(/[\p{Script=Georgian}0-9a-zA-Z]+|[.,!?;:'"‘’“”]/gu) || [];
 }
 
-// Выравнивание токенов (редакционное расстояние)
 function align(correct, user) {
     const n = correct.length, m = user.length;
     const dp = Array.from({length:n+1},()=>Array(m+1).fill(0));
@@ -97,7 +95,6 @@ function align(correct, user) {
     return aligned;
 }
 
-// Проверка текста
 checkBtn.addEventListener("click",()=>{
     const userTokens = tokenize(tArea.value);
     const correctTokens = tokenize(correctText);
@@ -111,32 +108,27 @@ checkBtn.addEventListener("click",()=>{
     for(const [corr, user] of alignment){
         if(corr!==null && user===corr){
             if(user!==wrongTokens[wrongTokens.indexOf(corr)]){
-                // исправлено правильно
                 resultHTML += `<span class="tok correct">${user}</span> `;
                 score++;
             } else {
-                // не трогал правильный токен
                 resultHTML += `${user} `;
             }
         } else if(corr!==null && user!==corr){
             if(user===null){
-                // пропущено исправление
                 resultHTML += `<span class="tok missed">${corr}</span> `;
                 score--;
             } else {
-                // исправлено неверно, показываем подсказку
                 resultHTML += `<span class="tok wrong">${user}<span class="hint">${corr}</span></span> `;
                 score--;
             }
         } else if(corr===null && user!==null){
-            // лишний токен
             resultHTML += `<span class="tok wrong">${user}</span> `;
             score--;
         }
     }
 
     resultDiv.innerHTML = resultHTML.trim();
-    scoreDiv.textContent = "Очки: "+score;
+    scoreDiv.textContent = "ქულა: "+score;
     tArea.disabled = true;
     checkBtn.disabled = true;
 });
